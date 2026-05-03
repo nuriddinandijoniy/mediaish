@@ -3,7 +3,9 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 from PIL import Image, ImageDraw, ImageFont
 
-API_TOKEN = "token"
+import os
+
+API_TOKEN = os.getenv("TOKEN")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
