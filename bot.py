@@ -3,7 +3,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 from PIL import Image, ImageDraw, ImageFont
 
-API_TOKEN = "7286699930:AAGNDcBXbq_6QJmQcz0NcuW6W5_tcrCwIgE"
+API_TOKEN = "token"
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
