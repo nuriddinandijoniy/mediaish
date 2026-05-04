@@ -1,24 +1,26 @@
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils import executor
+import asyncio
+from aiogram import Bot, Dispatcher, F
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
+from aiogram.filters import Command
 from PIL import Image, ImageDraw, ImageFont
 
-import os
-
-API_TOKEN = os.getenv("TOKEN")
+API_TOKEN = "7286699930:AAGNDcBXbq_6QJmQcz0NcuW6W5_tcrCwIgE"
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 data_user = {}
 
-kb = ReplyKeyboardMarkup(resize_keyboard=True)
-kb.add(KeyboardButton("🚀 Rasm yaratish"))
+kb = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="🚀 Rasm yaratish")]],
+    resize_keyboard=True
+)
 
-again_kb = ReplyKeyboardMarkup(resize_keyboard=True)
-again_kb.add(KeyboardButton("🔁 Yana"))
+again_kb = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="🔁 Yana")]],
+    resize_keyboard=True
+)
 
-# 🔥 TEXT BOX FIT
 def fit_text_box(draw, text, font_path, box, max_size=160, min_size=40):
     x1, y1, x2, y2 = box
     box_w = x2 - x1
@@ -26,7 +28,7 @@ def fit_text_box(draw, text, font_path, box, max_size=160, min_size=40):
 
     for size in range(max_size, min_size, -2):
         font = ImageFont.truetype(font_path, size)
-        bbox = draw.multiline_textbbox((0,0), text, font=font, align="center")
+        bbox = draw.multiline_textbbox((0, 0), text, font=font, align="center")
         w = bbox[2]
         h = bbox[3]
 
@@ -35,27 +37,17 @@ def fit_text_box(draw, text, font_path, box, max_size=160, min_size=40):
 
     return ImageFont.truetype(font_path, min_size), w, h
 
-# 🔥 GRADIENT TEXT (ikkinchi qatorda)
-def gradient_text(draw, x, y, text, font):
-    for i, char in enumerate(text):
-        color = (
-            int(255 - i*10),
-            int(80 + i*5),
-            255
-        )
-        draw.text((x + i*font.size*0.6, y), char, font=font, fill=color)
-
-@dp.message_handler(commands=['start'])
-async def start(msg: types.Message):
+@dp.message(Command("start"))
+async def start(msg: Message):
     await msg.answer("Boshlash 👇", reply_markup=kb)
 
-@dp.message_handler(lambda m: m.text in ["🚀 Rasm yaratish","🔁 Yana"])
-async def start_form(msg: types.Message):
+@dp.message(F.text.in_(["🚀 Rasm yaratish", "🔁 Yana"]))
+async def start_form(msg: Message):
     data_user[msg.from_user.id] = {}
     await msg.answer("Lavozim:")
 
-@dp.message_handler()
-async def form(msg: types.Message):
+@dp.message()
+async def form(msg: Message):
     uid = msg.from_user.id
     d = data_user.get(uid, {})
 
@@ -77,28 +69,21 @@ async def form(msg: types.Message):
         img = Image.open("template.png").convert("RGBA")
         draw = ImageDraw.Draw(img)
 
-        bold = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+        font_path = "Montserrat-Bold.ttf"
 
-        # 🔥 CHAP TOMON (LAVOZIM)
         box = (140, 350, 900, 700)
 
         words = d["lavozim"].upper().split(" ")
-        line1 = words[0]
-        line2 = " ".join(words[1:]) if len(words) > 1 else ""
+        text = words[0] + ("\n" + " ".join(words[1:]) if len(words) > 1 else "")
 
-        # 2 qator qilib beramiz
-        text = line1 + ("\n" + line2 if line2 else "")
-
-        font, w, h = fit_text_box(draw, text, bold, box)
+        font, w, h = fit_text_box(draw, text, font_path, box)
 
         x = box[0] + (box[2] - box[0] - w) // 2
         y = box[1] + (box[3] - box[1] - h) // 2
 
-        # birinchi qator oddiy
         draw.multiline_text((x, y), text, font=font, fill="white", align="center")
 
-        # 🔥 O‘NG TOMON (SENIKI — O‘ZGARMADI)
-        font_val = ImageFont.truetype(bold, 52)
+        font_val = ImageFont.truetype(font_path, 52)
 
         draw.text((1196, 291), d["manzil"], font=font_val, fill="white")
         draw.text((1196, 456), d["soha"], font=font_val, fill="white")
@@ -108,12 +93,17 @@ async def form(msg: types.Message):
         file = f"{uid}.png"
         img.save(file)
 
-        await msg.answer_photo(open(file, "rb"), caption="🔥 Tayyor", reply_markup=again_kb)
+        # 🔥 ENG MUHIM TUZATISH
+        photo = FSInputFile(file)
+
+        await msg.answer_photo(photo, caption="🔥 Tayyor", reply_markup=again_kb)
 
         data_user[uid] = {}
 
     data_user[uid] = d
 
-if __name__ == "__main__":
-    executor.start_polling(dp)
+async def main():
+    await dp.start_polling(bot)
 
+if __name__ == "__main__":
+    asyncio.run(main())
